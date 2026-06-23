@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantaMondiale - Calcolatore Interattivo</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #0d6efd; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 16px; }
+        
+        /* Pulsante Torna ad Admin */
+        .header-actions { display: flex; justify-content: flex-start; margin-bottom: 15px; }
+        .btn-ritorno { background: #495057; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-ritorno:hover { background: #343a40; color: white; }
+
+        /* Pannello di Inserimento */
+        .inserimento-box { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px; }
+        .row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        
+        /* Pulsanti contatori Bonus/Malus */
+        .btn-counter { background: #fff; border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .btn-counter:hover { background: #e9ecef; }
+        .btn-counter.active-bonus { background: #198754; color: white; border-color: #198754; }
+        .btn-counter.active-malus { background: #dc3545; color: white; border-color: #dc3545; }
+        .btn-counter.active-amm { background: #ffc107; color: #333; border-color: #ffc107; }
+
+        button.main-btn { display: block; width: 100%; padding: 14px; background: #0d6efd; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button.main-btn:hover { background: #0b5ed7; }
+        button.copy-btn { background: #198754; margin-top: 20px; display: none; width: 100%; padding: 14px; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button.copy-btn:hover { background: #157347; }
+        
+        /* Tabella */
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; display: none; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 3px; color: white; display: inline-block; }
+        .badge-gol { background: #198754; }
+        .badge-ass { background: #0dcaf0; color: #333; }
+        .badge-amm { background: #ffc107; color: #333; }
+        .badge-esp { background: #dc3545; }
+        .voto-badge { background: #212529; color: white; padding: 6px 10px; border-radius: 4px; font-weight: bold; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- AZIONI IN TESTATA (PULSANTE INDIETRO) -->
+    <div class="header-actions">
+        <button onclick="tornaAdAdmin()" class="btn-ritorno">⬅️ Chiudi e torna a Gestione Admin</button>
+    </div>
+
+    <h1>🏆 Il Tuo FantaMondiale Manuale</h1>
+    <div class="subtitle">Inserisci il voto di Sofascore, clicca i bonus e genera i fanta-voti!</div>
+    
+    <div class="inserimento-box">
+        <div class="row">
+            <div class="form-group">
+                <label for="nomeGiocatore">Nome Giocatore</label>
+                <input type="text" id="nomeGiocatore" placeholder="Es: L. Messi o Mbappé">
+            </div>
+            <div class="form-group">
+                <label for="votoBase">Voto Sofascore</label>
+                <input type="number" id="votoBase" step="0.1" min="3" max="10" placeholder="Es: 7.2">
+            </div>
+        </div>
+
+        <label style="margin-bottom: 8px;">Bonus e Malus del Giocatore:</label>
+        <div class="row" style="gap: 8px;">
+            <button type="button" class="btn-counter" id="btnGol" onclick="toggleBonus('gol', 3)">⚽ Gol (+3)</button>
+            <button type="button" class="btn-counter" id="btnAssist" onclick="toggleBonus('assist', 1.5)">🅰️ Assist (+1.5)</button>
+            <button type="button" class="btn-counter" id="btnAmm" onclick="toggleBonus('amm', -0.5)">🟨 Ammonito (-0.5)</button>
+            <button type="button" class="btn-counter" id="btnEsp" onclick="toggleBonus('esp', -2)">🟥 Espulso (-2)</button>
+            <button type="button" class="btn-counter" id="btnSubito" onclick="toggleBonus('subito', -1)">🧤 Gol Subito (-1)</button>
+            <button type="button" class="btn-counter" id="btnRigSbagliato" onclick="toggleBonus('rigSbagliato', -2)">❌ Rig. Sbagliato (-2)</button>
+        </div>
+
+        <button class="main-btn" onclick="aggiungiGiocatore()" style="margin-top: 10px;">Aggiungi Giocatore in Lista</button>
+    </div>
+
+    <button id="btnCopia" class="copy-btn" onclick="copiaRisultati()">📋 Copia Elenco Voti per la Chat Amici</button>
+
+    <table id="tabellaRisultati">
+        <thead>
+            <tr>
+                <th>Giocatore</th>
+                <th>Voto Base</th>
+                <th>Bonus / Malus</th>
+                <th>FANTA-VOTO</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabella"></tbody>
+    </table>
+</div>
+
+<script>
+    // Funzione per tornare indietro alla pagina admin
+    function tornaAdAdmin() {
+        // Se la pagina è stata aperta come popup/nuova scheda, prova a chiuderla per rimettere in focus l'admin
+        if (window.opener) {
+            window.close();
+        } else {
+            // Altrimenti, se si trova nella stessa scheda, reindirizza alla home dell'admin (cambia '/' con la rotta esatta dell'admin se diversa)
+            window.location.href = '/'; 
+        }
+    }
+
+    let eventiCorrenti = { gol: 0, assist: 0, amm: false, esp: false, subito: 0, rigSbagliato: false };
+    let listaGiocatori = [];
+
+    function toggleBonus(tipo, valore) {
+        const btn = {
+            gol: document.getElementById('btnGol'),
+            assist: document.getElementById('btnAssist'),
+            amm: document.getElementById('btnAmm'),
+            esp: document.getElementById('btnEsp'),
+            subito: document.getElementById('btnSubito'),
+            rigSbagliato: document.getElementById('btnRigSbagliato')
+        }[tipo];
+
+        if (tipo === 'gol' || tipo === 'assist' || tipo === 'subito') {
+            eventiCorrenti[tipo]++;
+            btn.classList.add('active-bonus');
+            if(tipo === 'subito') { btn.classList.remove('active-bonus'); btn.classList.add('active-malus'); }
+            btn.innerText = `${tipo === 'gol' ? '⚽ Gol' : tipo === 'assist' ? '🅰️ Assist' : '🧤 Gol Subito'} x${eventiCorrenti[tipo]} (+${eventiCorrenti[tipo]*Math.abs(valore)})`;
+            if (tipo === 'subito') btn.innerText = `🧤 Gol Subito x${eventiCorrenti[tipo]} (-${eventiCorrenti[tipo]})`;
+        } else {
+            eventiCorrenti[tipo] = !eventiCorrenti[tipo];
+            if (eventiCorrenti[tipo]) {
+                btn.classList.add(tipo === 'amm' ? 'active-amm' : 'active-malus');
+            } else {
+                btn.classList.remove('active-amm', 'active-malus');
+            }
+        }
+    }
+
+    function resetPulsanti() {
+        eventiCorrenti = { gol: 0, assist: 0, amm: false, esp: false, subito: 0, rigSbagliato: false };
+        document.getElementById('btnGol').className = "btn-counter";
+        document.getElementById('btnGol').innerText = "⚽ Gol (+3)";
+        document.getElementById('btnAssist').className = "btn-counter";
+        document.getElementById('btnAssist').innerText = "🅰️ Assist (+1)";
+        document.getElementById('btnAmm').className = "btn-counter";
+        document.getElementById('btnEsp').className = "btn-counter";
+        document.getElementById('btnSubito').className = "btn-counter";
+        document.getElementById('btnSubito').innerText = "🧤 Gol Subito (-1)";
+        document.getElementById('btnRigSbagliato').className = "btn-counter";
+    }
+
+    function aggiungiGiocatore() {
+        const nome = document.getElementById('nomeGiocatore').value.trim();
+        const votoBaseInput = document.getElementById('votoBase').value;
+
+        if (!nome || !votoBaseInput) {
+            alert("Per favore, inserisci sia il nome del giocatore che il voto di Sofascore!");
+            return;
+        }
+
+        const votoBase = parseFloat(votoBaseInput);
+        let modificatore = 0;
+        let dettagliHtml = "";
+
+        if (eventiCorrenti.gol > 0) { modificatore += (eventiCorrenti.gol * 3); dettagliHtml += `<span class="badge badge-gol">Gol x${eventiCorrenti.gol}</span> `; }
+        if (eventiCorrenti.assist > 0) { modificatore += (eventiCorrenti.assist * 1); dettagliHtml += `<span class="badge badge-ass">Assist x${eventiCorrenti.assist}</span> `; }
+        if (eventiCorrenti.amm) { modificatore -= 0.5; dettagliHtml += `<span class="badge badge-amm">Amm.</span> `; }
+        if (eventiCorrenti.esp) { modificatore -= 1; dettagliHtml += `<span class="badge badge-esp">Esp.</span> `; }
+        if (eventiCorrenti.subito > 0) { modificatore -= (eventiCorrenti.subito * 1); dettagliHtml += `<span class="badge badge-esp">Subiti x${eventiCorrenti.subito}</span> `; }
+        if (eventiCorrenti.rigSbagliato) { modificatore -= 3; dettagliHtml += `<span class="badge badge-esp">Rig. Sbagliato</span> `; }
+
+        if (dettagliHtml === "") dettagliHtml = "<span style='color:#999; font-size:13px;'>Nessun bonus</span>";
+
+        let fantaVoto = votoBase + modificatore;
+        fantaVoto = Math.round(fantaVoto * 2) / 2;
+        if (fantaVoto < 0) fantaVoto = 0;
+
+        listaGiocatori.push({ nome, fantaVoto: fantaVoto.toFixed(1) });
+
+        const corpo = document.getElementById('corpoTabella');
+        const riga = `
+            <tr>
+                <td><strong>${nome}</strong></td>
+                <td>${votoBase}</td>
+                <td>${dettagliHtml}</td>
+                <td><span class="voto-badge">${fantaVoto.toFixed(1)}</span></td>
+            </tr>
+        `;
+        corpo.innerHTML += riga;
+
+        document.getElementById('tabellaRisultati').style.display = "table";
+        document.getElementById('btnCopia').style.display = "block";
+
+        document.getElementById('nomeGiocatore').value = "";
+        document.getElementById('votoBase').value = "";
+        resetPulsanti();
+    }
+
+    function copiaRisultati() {
+        let testoPerChat = "📝 *VOTI FANTA-MONDIALE*\n\n";
+        listaGiocatori.forEach(g => {
+            testoPerChat += `• *${g.nome}* -> Fantavoto: *${g.fantaVoto}*\n`;
+        });
+        
+        navigator.clipboard.writeText(testoPerChat);
+        alert("Elenco voti copiato! Ora puoi incollarlo su WhatsApp.");
+    }
+</script>
+
+</body>
+</html>

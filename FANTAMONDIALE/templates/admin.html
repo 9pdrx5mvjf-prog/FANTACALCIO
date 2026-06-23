@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestione FantaMondiale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container-fluid px-5 mt-5">
+        <h1 class="text-center text-primary fw-bold mb-4">🏆 Pannello Gestione FantaMondiale</h1>
+        <div class="d-flex justify-content-center mb-4">
+            <button onclick="window.open('{{ url_for('pagina_calcolatore') }}', '_blank')" class="btn btn-danger btn-lg fw-bold shadow-sm px-4 py-2">
+    🧮 Apri Calcolatore FantaVoti
+            </button>
+        </div>
+        <div class="menu-admin">
+    <a href="{{ url_for('admin_formazioni') }}" class="btn btn-primary" style="font-weight: bold;">
+        📋 Vedi Formazioni Inviate
+    </a>
+</div>
+        <hr>
+
+        <div class="row">
+            <!-- COLONNA SINISTRA: UTENTI -->
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white"><h5>Aggiungi Fanta-Allenatore</h5></div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <input type="hidden" name="azione" value="crea_utente">
+                            <div class="mb-2"><label class="form-label">Nome Allenatore</label><input type="text" name="username" class="form-control" required placeholder="es: Luca"></div>
+                            <div class="mb-3"><label class="form-label">Nome Squadra</label><input type="text" name="nome_squadra" class="form-control" required placeholder="es: FantaTeam"></div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold">Registra Squadra</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white"><h5>Squadre Partecipanti</h5></div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Squadra</th>
+                                    <th>Allenatore</th>
+                                    <th>Crediti Rimanenti</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for utente in utenti %}
+                                <tr>
+                                    <td><strong>{{ utente['nome_squadra'] }}</strong></td>
+                                    <td>{{ utente['username'] }}</td>
+                                    <td>
+                                        <span class="fw-bold {% if utente['crediti_restanti'] >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ utente['crediti_restanti'] }} / 750
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted">Nessuna squadra iscritta.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLONNA DESTRA: LISTONE E ASTA -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white"><h5>Aggiungi Calciatore al Listone</h5></div>
+                    <div class="card-body">
+                        <form method="POST" class="row g-3">
+                            <input type="hidden" name="azione" value="crea_calciatore">
+                            <div class="col-md-4"><label class="form-label">Nome</label><input type="text" name="nome" class="form-control" placeholder="es: Mbappé" required></div>
+                            <div class="col-md-2">
+                                <label class="form-label">Ruolo</label>
+                                <select name="ruolo" class="form-select" required>
+                                    <option value="P">Por (P)</option><option value="D">Dif (D)</option><option value="C">Cen (C)</option><option value="A">Att (A)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label">Nazionale</label><input type="text" name="nazionale" class="form-control" placeholder="es: Francia" required></div>
+                            <div class="col-md-2"><label class="form-label">Quotazione</label><input type="number" name="quotazione" class="form-control" placeholder="es: 30" required></div>
+                            <div class="col-12"><button type="submit" class="btn btn-warning w-100 fw-bold">Inserisci nel Listone</button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark"><h5>📄 Il Listone Calciatori & Assegnazione Asta</h5></div>
+                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Ruolo</th>
+                                    <th>Nazionale</th>
+                                    <th>Quot. Base</th>
+                                    <th>Assegna Squadra & Prezzo Speso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for giocatore in calciatori %}
+                                <tr>
+                                    <td><strong>{{ giocatore['nome'] }}</strong></td>
+                                    <td><span class="badge {% if giocatore['ruolo']=='P' %}bg-secondary{% elif giocatore['ruolo']=='D' %}bg-primary{% elif giocatore['ruolo']=='C' %}bg-success{% elif giocatore['ruolo']=='A' %}bg-danger{% endif %}">{{ giocatore['ruolo'] }}</span></td>
+                                    <td>{{ giocatore['nazionale'] }}</td>
+                                    <td><span class="text-muted">{{ giocatore['quotazione'] }} FM</span></td>
+                                    <td>
+                                        <form method="POST" class="d-flex align-items-center gap-1">
+                                            <input type="hidden" name="azione" value="assegna_calciatore">
+                                            <input type="hidden" name="calciatore_id" value="{{ giocatore['id'] }}">
+                                            
+                                            <select name="utente_id" class="form-select form-select-sm" style="max-width: 160px;">
+                                                <option value="">Svincolato</option>
+                                                {% for utente in utenti %}
+                                                    <option value="{{ utente['id'] }}" {% if giocatore['proprietario_id'] == utente['id'] %}selected{% endif %}>
+                                                        {{ utente['nome_squadra'] }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+
+                                            <input type="number" name="prezzo_acquisto" class="form-control form-control-sm"
+                                                   placeholder="Prezzo" style="max-width: 85px;" min="0"
+                                                   value="{{ giocatore['prezzo_acquisto'] if giocatore['prezzo_acquisto'] is not none else '' }}">
+                                            
+                                            <button type="submit" class="btn btn-sm btn-dark" title="Salva">💾</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center text-muted">Il listone è vuoto. Inserisci dei calciatori!</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr style="padding: 20px; color: black;">
+
+        <!-- SEZIONE: LE ROSE DELLE SQUADRE -->
+        <div class="row mt-4 mb-5">
+            <div class="col-12">
+                <h3 class="text-dark fw-bold mb-3">🏃‍♂️ Le Rose delle Squadre</h3>
+            </div>
+            {% for utente in utenti %}
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm border-dark">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ utente['nome_squadra'] }}</h5>
+                        <span class="badge bg-light text-dark fw-bold">{{ utente['crediti_restanti'] }} cr</span>
+                    </div>
+                    
+                    <div class="card-body p-2 bg-light border-bottom border-dark border-opacity-25">
+                        <div class="d-flex justify-content-around text-center small fw-bold">
+                            <span class="text-secondary">P: {{ contatori[utente['id']]['P'] }}/3</span>
+                            <span class="text-primary">D: {{ contatori[utente['id']]['D'] }}/8</span>
+                            <span class="text-success">C: {{ contatori[utente['id']]['C'] }}/8</span>
+                            <span class="text-danger">A: {{ contatori[utente['id']]['A'] }}/6</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <ul class="list-group list-group-flush">
+                            {% for pc in rose[utente['id']] %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-1 py-2">
+                                <div>
+                                    <span class="badge {% if pc['ruolo']=='P' %}bg-secondary{% elif pc['ruolo']=='D' %}bg-primary{% elif pc['ruolo']=='C' %}bg-success{% elif pc['ruolo']=='A' %}bg-danger{% endif %} me-2">{{ pc['ruolo'] }}</span>
+                                    <strong>{{ pc['nome'] }}</strong> <span class="text-muted text-capitalize" style="font-size: 0.85rem;">({{ pc['nazionale'] }})</span>
+                                </div>
+                                <span class="badge bg-dark">{{ pc['prezzo_acquisto'] }} FM</span>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item text-center text-muted fst-italic py-3">Nessun calciatore acquistato.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="row mt-5 mb-5 pb-5">
+            <div class="col-12">
+                <h3 class="text-success fw-bold mb-3">🏟️ Schiera le Formazioni (Partita)</h3>
+            </div>
+            
+            <div class="col-12">
+                <div class="card shadow border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Crea Scontro di Giornata</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <input type="hidden" name="azione" value="salva_partita">
+                            
+                            <div class="row mb-4 justify-content-center">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Numero Giornata</label>
+                                    <input type="number" name="giornata" class="form-control" required min="1" placeholder="Es. 1">
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6 border-end">
+                                    <h4 class="text-center mb-3">🏠 Squadra Casa</h4>
+                                    <div class="mb-3">
+                                        <select name="squadra_casa" id="squadra_casa" class="form-select border-dark" required onchange="aggiornaFormazione('casa')">
+                                            <option value="">-- Seleziona Squadra --</option>
+                                            {% for utente in utenti %}
+                                                <option value="{{ utente['id'] }}">{{ utente['nome_squadra'] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <select name="modulo_casa" id="modulo_casa" class="form-select border-dark" required onchange="aggiornaFormazione('casa')">
+                                            <option value="">-- Scegli Modulo --</option>
+                                            <option value="4-3-3">4-3-3</option>
+                                            <option value="4-4-2">4-4-2</option>
+                                            <option value="3-5-2">3-5-2</option>
+                                            <option value="3-4-3">3-4-3</option>
+                                            <option value="4-5-1">4-5-1</option>
+                                            <option value="3-3-4">3-3-4</option>
+                                            <option value="2-3-5">2-3-5</option>
+                                            <option value="3-2-5">3-2-5</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div id="container_casa" class="d-flex flex-column gap-2">
+                                        <p class="text-muted text-center fst-italic">Seleziona squadra e modulo per schierare i giocatori.</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <h4 class="text-center mb-3">✈️ Squadra Trasferta</h4>
+                                    <div class="mb-3">
+                                        <select name="squadra_trasferta" id="squadra_trasferta" class="form-select border-dark" required onchange="aggiornaFormazione('trasferta')">
+                                            <option value="">-- Seleziona Squadra --</option>
+                                            {% for utente in utenti %}
+                                                <option value="{{ utente['id'] }}">{{ utente['nome_squadra'] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <select name="modulo_trasferta" id="modulo_trasferta" class="form-select border-dark" required onchange="aggiornaFormazione('trasferta')">
+                                            <option value="">-- Scegli Modulo --</option>
+                                            <option value="4-3-3">4-3-3</option>
+                                            <option value="4-4-2">4-4-2</option>
+                                            <option value="3-5-2">3-5-2</option>
+                                            <option value="3-4-3">3-4-3</option>
+                                            <option value="4-5-1">4-5-1</option>
+                                            <option value="3-3-4">3-3-4</option>
+                                            <option value="2-3-5">2-3-5</option>
+                                            <option value="3-2-5">3-2-5</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div id="container_trasferta" class="d-flex flex-column gap-2">
+                                        <p class="text-muted text-center fst-italic">Seleziona squadra e modulo per schierare i giocatori.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">💾 Salva Formazioni Partita</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr style="padding: 20px; color: black;">
+
+        <div class="card shadow border-warning mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center bg-light">
+        <div>
+            <h5 class="fw-bold m-0 text-dark">📦 Mercato a Buste Chiuse</h5>
+            <p class="text-muted small m-0">Calcola automaticamente chi ha offerto di più per i giocatori liberi e assegnali alle rose.</p>
+        </div>
+        <form method="POST" onsubmit="return confirm('Sei sicuro di voler aprire le buste? Questa azione assegnerà i giocatori e resetterà le offerte attuali.');">
+            <input type="hidden" name="azione" value="risolvi_buste">
+            <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm">🔓 Apri Buste e Assegna</button>
+        </form>
+    </div>
+</div>
+
+        <div class="row mt-5">
+    <div class="col-12">
+        <h3 class="text-primary fw-bold mb-3">📅 Calendario Partite e Risultati</h3>
+    </div>
+    {% for partita in partite %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow border-info">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Giornata {{ partita['giornata'] }}</span>
+                {% if partita['gol_casa'] is not none and partita['gol_trasferta'] is not none %}
+                    <span class="badge bg-success text-white">Terminata</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Da Giocare</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row text-center align-items-center mb-3">
+                    <div class="col-5">
+                        <h5 class="text-primary fw-bold mb-1">{{ partita['nome_squadra_casa'] }}</h5>
+                        <small class="badge bg-secondary">{{ partita['modulo_casa'] }}</small>
+                    </div>
+                    <div class="col-2 px-0">
+                        <h3 class="fw-bold text-dark m-0">
+                            {% if partita['gol_casa'] is not none and partita['gol_trasferta'] is not none %}
+                                {{ partita['gol_casa'] }} - {{ partita['gol_trasferta'] }}
+                            {% else %}
+                                VS
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="col-5">
+                        <h5 class="text-danger fw-bold mb-1">{{ partita['nome_squadra_trasferta'] }}</h5>
+                        <small class="badge bg-secondary">{{ partita['modulo_trasferta'] }}</small>
+                    </div>
+                </div>
+
+                <div class="bg-light p-2 rounded mb-3 border text-center">
+                    <form method="POST" class="row g-2 justify-content-center align-items-center">
+                        <input type="hidden" name="azione" value="aggiorna_risultato">
+                        <input type="hidden" name="partita_id" value="{{ partita['id'] }}">
+                        <div class="col-auto">
+                            <input type="number" name="gol_casa" class="form-control form-control-sm text-center fw-bold" style="width: 65px;" min="0" required value="{{ partita['gol_casa'] if partita['gol_casa'] is not none else '' }}" placeholder="Gol Casa">
+                        </div>
+                        <div class="col-auto text-muted fw-bold">-</div>
+                        <div class="col-auto">
+                            <input type="number" name="gol_trasferta" class="form-control form-control-sm text-center fw-bold" style="width: 65px;" min="0" required value="{{ partita['gol_trasferta'] if partita['gol_trasferta'] is not none else '' }}" placeholder="Gol Fuori">
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-sm btn-dark fw-bold">💾 Salva Risultato</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="row pt-2 border-top">
+                    <div class="col-6">
+                        <ul class="list-unstyled mt-1 small text-start text-secondary">
+                            {% for nome in partita['nomi_casa'] %}
+                            <li>• {{ nome }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-6 border-start">
+                        <ul class="list-unstyled mt-1 small text-start text-secondary">
+                            {% for nome in partita['nomi_trasferta'] %}
+                            <li>• {{ nome }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12"><p class="text-muted">Nessuna partita creata finora.</p></div>
+    {% endfor %}
+</div>
+
+        <div class="row mt-5 mb-5 pb-5">
+    <div class="col-12">
+        <h3 class="text-primary fw-bold mb-3">📝 Inserimento Voti e Calcolo Giornata</h3>
+    </div>
+    
+    <div class="col-12">
+        <div class="card shadow border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Inserisci Voti e Calcola Automaticamente i Risultati</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="azione" value="salva_voti_giornata">
+                    
+                    <div class="row mb-4 justify-content-center align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Seleziona Giornata da Calcolare</label>
+                            <select class="form-select border-primary fw-bold" name="giornata_voti" id="select_giornata_voti" required onchange="filtraCalciatoriPerGiornata()">
+                                {% for g in range(1, 28) %}
+                                    <option value="{{ g }}">Giornata {{ g }}</option>
+                                
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm">⚙️ Calcola Risultati</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-striped table-hover align-middle text-center">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th class="text-start ps-4">Calciatore</th>
+                                    <th>Ruolo</th>
+                                    <th>Fantastatuto</th>
+                                    <th style="width: 140px;">Voto Base</th>
+                                    <th style="width: 140px;">Bonus/Malus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpo_tabella_voti">
+                                {% for giocatore in calciatori %}
+                                <tr id="riga_giocatore_{{ giocatore.id }}" class="riga-calciatore-voti">
+                                    <td class="text-start ps-4 fw-bold">{{ giocatore.nome }}</td>
+                                    <td>
+                                        <span class="badge {% if giocatore.ruolo == 'P' %}bg-warning text-dark{% elif giocatore.ruolo == 'D' %}bg-success{% elif giocatore.ruolo == 'C' %}bg-info text-dark{% else %}bg-danger{% endif %}">
+                                            {{ giocatore.ruolo }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set trovato = false %}
+                                        {% for utente in utenti %}
+                                            {% if utente.id == giocatore.proprietario_id %}
+                                                <span class="text-primary fw-semibold">{{ utente.nome_squadra }}</span>
+                                                {% set trovato = true %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if not trovato %}<span class="text-muted fst-italic">Svincolato</span>{% endif %}
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.25" class="form-control form-control-sm text-center border-secondary" name="voto_{{ giocatore.id }}" placeholder="es. 6">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.5" class="form-control form-control-sm text-center border-secondary" name="bonus_{{ giocatore.id }}" placeholder="es. 3">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="row mt-5 mb-5 pb-5">
+    <div class="col-12">
+        <h3 class="text-dark fw-bold mb-3">🏆 Classifica Generale</h3>
+    </div>
+    <div class="col-12">
+        <div class="card shadow border-dark">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0 text-center align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 70px;">Pos</th>
+                                <th class="text-start ps-4">Squadra</th>
+                                <th class="fw-bold text-warning">PUNTI</th>
+                                <th class="text-success">Vinte (V)</th>
+                                <th class="text-secondary">Pareggi (P)</th>
+                                <th class="text-danger">Perse (S)</th>
+                                <th>Gol Fatti (GF)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for squadra in classifica %}
+                            <tr>
+                                <td class="fw-bold fs-5">{{ loop.index }}°</td>
+                                <td class="text-start ps-4 fw-bold text-primary fs-5">{{ squadra['nome_squadra'] }}</td>
+                                <td class="fw-bold fs-4 text-dark bg-light border border-warning-subtle">{{ squadra['punti'] }}</td>
+                                <td class="text-success fw-bold">{{ squadra['vinte'] }}</td>
+                                <td class="text-secondary">{{ squadra['pareggiate'] }}</td>
+                                <td class="text-danger">{{ squadra['perse'] }}</td>
+                                <td class="fst-italic fw-semibold">{{ squadra['goal_fatti'] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-muted py-4 fst-italic">Nessun dato disponibile. Inserisci i gol nel calendario per avviare la classifica!</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+
+    <script>
+        // Carichiamo i dati direttamente dal server in una variabile JS sicura
+        const roseData = {{ rose_js | safe }};
+        
+        console.log("Rose caricate correttamente:", roseData);
+
+        function getColor(ruolo) {
+            if(ruolo === 'P') return 'secondary';
+            if(ruolo === 'D') return 'primary';
+            if(ruolo === 'C') return 'success';
+            if(ruolo === 'A') return 'danger';
+            return 'dark';
+        }
+
+        function aggiornaFormazione(tipo) {
+            const teamId = document.getElementById('squadra_' + tipo).value;
+            const modulo = document.getElementById('modulo_' + tipo).value;
+            const container = document.getElementById('container_' + tipo);
+            
+            container.innerHTML = '';
+            
+            if(!teamId || !modulo) {
+                container.innerHTML = '<p class="text-muted text-center fst-italic">Seleziona squadra e modulo.</p>';
+                return;
+            }
+            
+            // Verifichiamo se l'ID esiste nei dati
+            const teamRoster = roseData[teamId];
+            
+            if (!teamRoster) {
+                container.innerHTML = '<p class="text-danger">Nessun dato trovato per questo utente.</p>';
+                return;
+            }
+            
+            const ruoliMap = {
+                '4-3-3': ['P','D','D','D','D','C','C','C','A','A','A'],
+                '4-4-2': ['P','D','D','D','D','C','C','C','C','A','A'],
+                '3-5-2': ['P','D','D','D','C','C','C','C','C','A','A'],
+                '3-4-3': ['P','D','D','D','C','C','C','C','A','A','A'],
+                '4-5-1': ['P','D','D','D','D','C','C','C','C','C','A'],
+                '3-3-4': ['P','D','D','D','C','C','C','A','A','A','A'],
+                '2-3-5': ['P','D','D','C','C','C','A','A','A','A','A'],
+                '3-2-5': ['P','D','D','D','C','C','A','A','A','A','A']
+            };
+            
+            const schema = ruoliMap[modulo];
+            
+            schema.forEach((ruolo, index) => {
+                let optionsHtml = `<option value="">-- Seleziona ${ruolo} --</option>`;
+                
+                if(teamRoster[ruolo] && teamRoster[ruolo].length > 0) {
+                    teamRoster[ruolo].forEach(giocatore => {
+                        optionsHtml += `<option value="${giocatore.id}">${giocatore.nome}</option>`;
+                    });
+                } else {
+                    optionsHtml += `<option value="" disabled>Nessun ${ruolo} in rosa</option>`;
+                }
+                
+                container.innerHTML += `
+                    <div class="input-group input-group-sm mb-1">
+                        <span class="input-group-text fw-bold text-white bg-${getColor(ruolo)}" style="width: 45px; justify-content: center;">${ruolo}</span>
+                        <select name="${tipo}_titolare_${index+1}" class="form-select" required>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+            });
+        }
+
+        // Riceviamo la mappa dei giocatori schierati da Python
+    const mappaSchierati = {{ schierati | tojson | safe if schierati else '{}' }};
+
+    function filtraCalciatoriPerGiornata() {
+        const giornataSelezionata = document.getElementById('select_giornata_voti').value;
+        const giocatoriTitolari = mappaSchierati[giornataSelezionata] || [];
+        
+        // Prendiamo tutte le righe dei calciatori nella tabella voti
+        const righe = document.querySelectorAll('.riga-calciatore-voti');
+        
+        righe.forEach(riga => {
+            // Estraiamo l'ID del giocatore dall'ID della riga (es: riga_giocatore_15 -> 15)
+            const giocatoreId = parseInt(riga.id.replace('riga_giocatore_', ''));
+            
+            // Se il giocatore è presente nei titolari della giornata selezionata lo mostriamo, altrimenti lo nascondiamo
+            if (giocatoriTitolari.includes(giocatoreId)) {
+                riga.style.display = '';
+            } else {
+                riga.style.display = 'none';
+            }
+        });
+    }
+
+    // Eseguiamo il filtro al caricamento della pagina per la Giornata 1
+    document.addEventListener("DOMContentLoaded", function() {
+        filtraCalciatoriPerGiornata();
+    });
+    </script>

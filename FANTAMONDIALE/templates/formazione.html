@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schiera Formazione - FantaMondiale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --primary-hover: #1b5e20;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e0e0e0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        
+        body { 
+            /* Sfondo a gradiente ufficiale Mondiale 2026 */
+            background: radial-gradient(circle at center, #1a1b4b 0%, #08091a 100%);
+            background-attachment: fixed;
+            color: var(--text-color); 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        
+        .wrapper { 
+            max-width: 600px; 
+            width: 100%; 
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .container-fanta { 
+            background: var(--card-bg); 
+            width: 100%; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); 
+            padding: 30px; 
+        }
+        
+        h2 { text-align: center; font-weight: 700; color: var(--primary-color); margin-bottom: 25px; font-size: 1.6rem; }
+        
+        /* Box per Giornata e Modulo affiancati */
+        .config-ore {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .select-field { display: flex; flex-direction: column; gap: 5px; }
+        label { font-weight: 600; font-size: 0.9rem; color: #64748b; }
+        
+        select { width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; background-color: white; outline: none; transition: all 0.3s ease; cursor: pointer; }
+        select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.25); }
+        
+        .gruppo-ruolo { margin-bottom: 25px; border-left: 4px solid var(--primary-color); padding-left: 15px; }
+        .gruppo-ruolo:nth-of-type(1) { border-left-color: #f1c40f; } /* Portiere */
+        .gruppo-ruolo:nth-of-type(2) { border-left-color: #0d6efd; } /* Difesa */
+        .gruppo-ruolo:nth-of-type(3) { border-left-color: #198754; } /* Centrocampo */
+        .gruppo-ruolo:nth-of-type(4) { border-left-color: #dc2626; } /* Attacco */
+        
+        h3 { font-size: 1.05rem; font-weight: 600; color: #1e293b; margin-bottom: 10px; text-transform: uppercase; }
+        .giocatore-input { display: block; margin: 8px 0; width: 100%; animation: fadeIn 0.3s ease; }
+        
+        button[type="submit"] { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 15px; font-size: 1.1rem; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2); }
+        button[type="submit"]:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        
+        /* Pulsante Ritorno coordinato per sfondo scuro */
+        .btn-ritorno { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            color: #ffffff; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 0.95rem; 
+            transition: all 0.2s ease; 
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            background: transparent;
+            align-self: flex-start;
+        }
+        .btn-ritorno:hover { 
+            color: #ffffff; 
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: #ffffff;
+            transform: translateX(-4px); 
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 480px) { .config-ore { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <a href="{{url_for('home_utente')}}" class="btn-ritorno">
+            ⬅️ Torna alla Home
+        </a>
+
+        <div class="container-fanta">
+            <h2>⚽ Schiera la Formazione</h2>
+            
+            <form action="{{ url_for('schiera_formazione') }}" method="POST">
+                
+                <div class="config-ore">
+                    <div class="select-field">
+                        <label for="giornata">Seleziona Giornata:</label>
+                        <select id="giornata" name="giornata" required>
+                            <option value="">-- Scegli --</option>
+                            {% for g in range(1, 28) %} 
+                                <option value="{{ g }}">Giornata {{ g }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="select-field">
+                        <label for="modulo">Modulo Tattico:</label>
+                        <select id="modulo" name="modulo" onchange="aggiornaCampi()">
+                            <option value="433" selected>4-3-3</option>
+                            <option value="442">4-4-2</option>
+                            <option value="352">3-5-2</option>
+                            <option value="343">3-4-3</option>
+                            <option value="451">4-5-1</option>
+                            <option value="334">3-3-4</option>
+                            <option value="235">2-3-5</option>
+                            <option value="325">3-2-5</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="campo-formazione">
+                    <div class="gruppo-ruolo">
+                        <h3>Portiere 🧤</h3>
+                        <select name="por_1" class="giocatore-input" required>
+                            <option value="">-- Seleziona Portiere --</option>
+                            {% for c in miei_calciatori %}
+                                {% if c.ruolo == 'P' %}
+                                    <option value="{{ c.nome }}">{{ c.nome }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="gruppo-ruolo">
+                        <h3>Difensori 🛡️</h3>
+                        <div id="sezione-difensori">
+                            {% for i in range(1, 6) %}
+                            <select name="dif_{{ i }}" id="dif_{{ i }}" class="giocatore-input">
+                                <option value="">-- Difensore {{ i }} --</option>
+                                {% for c in miei_calciatori %}
+                                    {% if c.ruolo == 'D' %}
+                                        <option value="{{ c.nome }}">{{ c.nome }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="gruppo-ruolo">
+                        <h3>Centrocampisti 🧠</h3>
+                        <div id="sezione-centrocampisti">
+                            {% for i in range(1, 6) %}
+                            <select name="cen_{{ i }}" id="cen_{{ i }}" class="giocatore-input">
+                                <option value="">-- Centrocampista {{ i }} --</option>
+                                {% for c in miei_calciatori %}
+                                    {% if c.ruolo == 'C' %}
+                                        <option value="{{ c.nome }}">{{ c.nome }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="gruppo-ruolo">
+                        <h3>Attaccanti ⚡</h3>
+                        <div id="sezione-attaccanti">
+                            {# Esteso il range fino a 5 per supportare i moduli 2-3-5 e 3-2-5 #}
+                            {% for i in range(1, 6) %}
+                            <select name="att_{{ i }}" id="att_{{ i }}" class="giocatore-input">
+                                <option value="">-- Attaccante {{ i }} --</option>
+                                {% for c in miei_calciatori %}
+                                    {% if c.ruolo == 'A' %}
+                                        <option value="{{ c.nome }}">{{ c.nome }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="mt-2 py-3 shadow-sm">Invia Formazione Ufficiale 🚀</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function aggiornaCampi() {
+            const modulo = document.getElementById('modulo').value;
+            const numDif = parseInt(modulo[0]);
+            const numCen = parseInt(modulo[1]);
+            const numAtt = parseInt(modulo[2]);
+
+            // Gestione Difensori (Max 5)
+            for(let i=1; i<=5; i++) {
+                let el = document.getElementById('dif_' + i);
+                if(el) {
+                    let mostra = i <= numDif;
+                    el.style.display = mostra ? 'block' : 'none';
+                    el.disabled = !mostra; 
+                    el.required = mostra;  
+                }
+            }
+
+            // Gestione Centrocampisti (Max 5)
+            for(let i=1; i<=5; i++) {
+                let el = document.getElementById('cen_' + i);
+                if(el) {
+                    let mostra = i <= numCen;
+                    el.style.display = mostra ? 'block' : 'none';
+                    el.disabled = !mostra;
+                    el.required = mostra;
+                }
+            }
+
+            // Gestione Attaccanti (Esteso a Max 5 per i nuovi moduli)
+            for(let i=1; i<=5; i++) {
+                let el = document.getElementById('att_' + i);
+                if(el) {
+                    let mostra = i <= numAtt;
+                    el.style.display = mostra ? 'block' : 'none';
+                    el.disabled = !mostra;
+                    el.required = mostra;
+                }
+            }
+        }
+
+        document.querySelectorAll('.giocatore-input').forEach(select => {
+            select.addEventListener('change', function() {
+                if (this.value === "") return;
+                const tuttiISelect = document.querySelectorAll('.giocatore-input');
+                let trovatoDuplicato = false;
+                tuttiISelect.forEach(altroSelect => {
+                    if (altroSelect !== this && !altroSelect.disabled && altroSelect.value === this.value) {
+                        trovatoDuplicato = true;
+                    }
+                });
+                if (trovatoDuplicato) {
+                    alert("⚠️ Attenzione! Hai già schierato " + this.value + " in un'altra posizione. Non puoi duplicare i giocatori!");
+                    this.value = ""; 
+                }
+            });
+        });
+
+        window.onload = aggiornaCampi;
+    </script>
+</body>
+</html>

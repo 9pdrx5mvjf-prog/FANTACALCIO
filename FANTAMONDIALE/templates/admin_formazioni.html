@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Pannello Admin - Formazioni</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #2e7d32;
+            --light-green: #e8f5e9;
+            --text-dark: #333;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f4f7f6; 
+            padding: 40px;
+            color: var(--text-dark);
+        }
+
+        h2 { 
+            color: var(--primary-green); 
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0;
+        }
+
+        th { 
+            background-color: var(--primary-green); 
+            color: white; 
+            padding: 15px; 
+            text-align: left;
+        }
+
+        th:first-child { border-top-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; }
+
+        td { 
+            padding: 15px; 
+            border-bottom: 1px solid #eee; 
+        }
+
+        tr:hover { background-color: #f1f8e9; transition: 0.3s; }
+
+        .badge-giornata {
+            background: var(--primary-green); 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .username { color: var(--primary-green); font-weight: 600; }
+        
+        .titolari-list { font-size: 0.95em; color: #555; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <h2>Pannello di Controllo Admin</h2>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Utente</th>
+                    <th>Giornata</th>
+                    <th>Modulo</th>
+                    <th>11 Titolari</th>
+                    <th>Data Invio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in formazioni %}
+                <tr>
+                    <td class="username">{{ f.username }}</td>
+                    <td><span class="badge-giornata">G {{ f.giornata }}</span></td>
+                    <td><strong>{{ f.modulo }}</strong></td>
+                    <td class="titolari-list">{{ f.titolari | join(', ') }}</td>
+                    <td>{{ f.data_invio }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
